@@ -3,9 +3,12 @@ extern crate core;
 
 use std::collections::HashSet;
 
-mod Transaction;
+mod transaction;
+mod config;
 
 fn main() {
+  let (public,secret) = config::load_key_pair();
+  println("loaded keypair\nPUBLIC\n{}\nSECRET\n{}\n", public, secret);
   let mut ledger = HashSet::new();
 
   let first_transaction = Transaction::new("Alice","Bob",Vec::from_slice(b"Red Stamp"));
