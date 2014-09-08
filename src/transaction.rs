@@ -45,36 +45,50 @@ fn mutate_transaction_header_until_proof_of_work_is_ok(header: &mut TransactionH
 			header.nonce = try;
 
 			// check that the first *complexity* bytes are 0
-			if hash(header) < (1 << (64-(8*complexity))) {
-				println!("we found {} after {} tries", hash(header), try);
+			if hash(header) < (1 << (64-(4*complexity))) {
+				println!("we found {:016x} after {} tries", hash(header), try);
 				return;
 			}
 	}
 }
 
-pub fn new(from: User, to: User, payload: Vec<u8>) -> Transaction {
+impl Transaction {
+    pub fn new(from: User, to: User, payload: Vec<u8>) -> Transaction {
 
-	let mut header = TransactionHeader {
-			from: from,
-			to: to,
-			time: time::get_time(),
-			payload_hash: hash(&payload),
-			payload_length: payload.len(),
-			nonce: 0
-	};
+        let mut header = TransactionHeader {
+                from: from,
+                to: to,
+                time: time::get_time(),
+                payload_hash: hash(&payload),
+                payload_length: payload.len(),
+                nonce: 0
+        };
 
-	mutate_transaction_header_until_proof_of_work_is_ok(&mut header, 2);
+        mutate_transaction_header_until_proof_of_work_is_ok(&mut header, super::config::POW_DIFFICULTY);
 
-	let hash = hash(&header);
-	let signature = sign(hash);
+        let hash = hash(&header);
+        let signature = sign(hash);
 
-	Transaction {
-		header: header,
-		payload: payload,
-		signature: signature
-	}
+        Transaction {
+            header: header,
+            payload: payload,
+            signature: signature
+        }
+    }
 }
 
 fn sign(hash: u64) -> u64 {
 	hash
+}
+
+#[test]
+fn run_tests(){
+    let t = Transaction::new("Alice", "Bob", Vec::from_slice(b"Red Stamp"));
+    test_hash_shows_proof_of_work(&t);
+}
+
+#[cfg(test)]
+fn test_hash_shows_proof_of_work(transaction: &Transaction){
+    // soon, we will have to decode the signature first
+    assert!(transaction.signature < (1 << (64 - 4*super::config::POW_DIFFICULTY)));
 }
